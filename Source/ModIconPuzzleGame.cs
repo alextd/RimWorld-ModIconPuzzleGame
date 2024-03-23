@@ -85,13 +85,11 @@ namespace ModIconPuzzleGame
 			{
 				if (Event.current.type == EventType.MouseUp)
 				{
-					Log.Message($"Stopping drag {modSliding}");
 					modSliding = null;
 					Event.current.Use();
 				}
 				else if (Event.current.type == EventType.MouseDrag)
 				{
-					Log.Message($"Adding drag {modSliding}");
 					AddSlideForIcon(modSliding, Event.current.delta);
 					Event.current.Use();
 				}
@@ -101,12 +99,10 @@ namespace ModIconPuzzleGame
 			{
 				if (Event.current.button == 1)
 				{
-					Log.Message($"Rotating {mod}");
 					AddAngleForIcon(mod, 90);
 				}
 				else
 				{
-					Log.Message($"Starting drag {mod}");
 					modSliding = mod;
 				}
 				Event.current.Use();
@@ -253,7 +249,6 @@ namespace ModIconPuzzleGame
 
 		public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
 		{
-			Log.Message($"MoveModIconSummary Transpiler");
 			MethodInfo DrawTextureInfo = AccessTools.Method(typeof(GUI), nameof(GUI.DrawTexture),
 				 [typeof(Rect), typeof(Texture)]);
 
@@ -267,7 +262,6 @@ namespace ModIconPuzzleGame
 			{
 				if (inst.Calls(IconGetterInfo))
 				{
-					Log.Message($"ModMetaData.Icon");
 					if (!firstIcon)
 						firstIcon = true;
 					else
@@ -280,7 +274,6 @@ namespace ModIconPuzzleGame
 				}
 				else if (inst.Calls(DrawTextureInfo))
 				{
-					Log.Message($"DrawTexture");
 					//DrawTextureForMod(Rect , ModMetaData )
 					yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(MoveModIconSummary), nameof(DrawTextureForMod)));
 				}
