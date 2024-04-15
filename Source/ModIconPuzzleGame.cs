@@ -142,8 +142,10 @@ namespace ModIconPuzzleGame
 		{
 			MethodInfo DrawOptionBackgroundInfo = AccessTools.Method(typeof(Widgets), nameof(Widgets.DrawOptionBackground));
 
-			MethodInfo DrawTextureFittedInfo = AccessTools.Method(typeof(Widgets), nameof(Widgets.DrawTextureFitted),
-				[typeof(Rect), typeof(Texture), typeof(float)]);
+			MethodInfo NullOrBadInfo = AccessTools.Method(typeof(BaseContent), nameof(BaseContent.NullOrBad), [typeof(Texture2D)]);
+
+			MethodInfo DrawTextureFittedInfo = AccessTools.Method(typeof(GUI), nameof(GUI.DrawTexture),
+				[typeof(Rect), typeof(Texture)]);
 
 			List<CodeInstruction> insts = instructions.ToList();
 			for (int i = 0; i < insts.Count; i++)
@@ -162,38 +164,39 @@ namespace ModIconPuzzleGame
 					// Have to swap labels and branches around because if blocks reordered
 
 					CodeInstruction branchButtonInvisible, branchIconNull;
-					Label labelAfter, labelMiddle;
+					Label labelAfterAll, labelAfterButton;
 
-					// Swap the labels in the operands 
+					// Hardcode that it's 8 lines to handle the ButtonInvisible block
+					int buttonI = i + 1;
+					int buttonEnd = i + 8;
+
+					// Swap the labels in the operands (for branching out of the if statemetns)
 					branchButtonInvisible = insts[i + 4];
-					labelMiddle = (Label)branchButtonInvisible.operand;
+					labelAfterButton = (Label)branchButtonInvisible.operand;//i+9
 
-					branchIconNull = insts[i + 14];
-					labelAfter = (Label)branchIconNull.operand;
+					int iconNullOrBadI = insts.FindIndex(ci => ci.Calls(NullOrBadInfo)) + 1;
+					branchIconNull = insts[iconNullOrBadI];
+					labelAfterAll = (Label)branchIconNull.operand;
 
-					branchButtonInvisible.operand = labelAfter;
-					branchIconNull.operand = labelMiddle;
+					branchButtonInvisible.operand = labelAfterAll;
+					branchIconNull.operand = labelAfterButton;
 
 					// set label of mid if-branch
-					insts[i + 9].labels.Clear();  //this is going to be the next line and doesn't need a label
+					insts[buttonEnd + 1].labels.Clear();  // labelAfterButton - this is going to be the next line and doesn't need a label
 
-					insts[i + 1].labels.Add(labelMiddle); // this will come after an if block and gets jumped to, from branchIconNull
+					insts[buttonI].labels.Add(labelAfterButton); // this will come after an if block and gets jumped to, from branchIconNull
 
 
 					CodeInstruction ldMod = insts[i + 6];
 
 					// Write out-of-order lines
 
-					// Hardcode that it's 8 lines to handle the ButtonInvisible block
-					int buttonI = i + 1;
-					int buttonEnd = i + 8;
-
 					// A little more clever with this:
 					int drawTexI = buttonEnd;
 
 
 					// Yield tex lines, starting after the button block, ending once it hits the label that is after all this.
-					while (!insts[drawTexI + 1].labels.Contains(labelAfter))
+					while (!insts[drawTexI + 1].labels.Contains(labelAfterAll))
 					{
 						drawTexI++;
 						if (insts[drawTexI].Calls(DrawTextureFittedInfo))
@@ -221,7 +224,7 @@ namespace ModIconPuzzleGame
 
 
 		static PuzzleCache puz = new();
-		public static void OverrideDrawTextureFitted(Rect rect, Texture tex, float _, Mod mod)
+		public static void OverrideDrawTextureFitted(Rect rect, Texture tex, Mod mod)
 		{
 			puz.Draw(rect, tex, mod);
 		}
